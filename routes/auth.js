@@ -104,6 +104,15 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// In your auth routes
+router.get('/verify', protect, (req, res) => {
+  // If middleware passed, token is valid
+  res.status(200).json({ 
+    valid: true,
+    hospital: req.hospital // Optionally return fresh hospital data
+  });
+});
+
 // @route   GET /api/auth/me
 // @desc    Get hospital profile
 // @access  Private

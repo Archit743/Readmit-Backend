@@ -61,7 +61,10 @@ router.post('/', async (req, res) => {
       fileUrls: Array.isArray(fileUrls) ? fileUrls : [],
       readmissionRisk: readmissionRisk || "Unknown",
       date: date || new Date().toISOString(),
-      hospitalId: req.hospital._id
+      hospitalId: req.hospital._id,
+      isApproved: req.body.isApproved || false,
+      approvedAt: req.body.isApproved ? new Date() : null,
+      approvedBy: req.body.isApproved ? req.user._id : null
     };
     
     // Create new patient
@@ -167,6 +170,12 @@ router.put('/:id', async (req, res) => {
     if (previousAdmissions) updateData.previousAdmissions = parseInt(previousAdmissions);
     if (fileUrls) updateData.fileUrls = Array.isArray(fileUrls) ? fileUrls : [];
     if (readmissionRisk) updateData.readmissionRisk = readmissionRisk;
+        // Inside your existing PUT route, in the updateData section
+    if (req.body.hasOwnProperty('isApproved')) {
+      updateData.isApproved = !!req.body.isApproved;
+      updateData.approvedAt = req.body.isApproved ? new Date() : null;
+      updateData.approvedBy = req.body.isApproved ? req.body.approvedBy || req.user._id : null;
+    }
     
     // Find and update patient
     const patient = await Patient.findOneAndUpdate(
@@ -245,5 +254,59 @@ router.delete('/:id', async (req, res) => {
     });
   }
 });
+
+// @route   PATCH /api/patients/:id/approval
+// @desc    Update patient approval status
+// @access  Private
+router.patch('/:id/approval', async (req, res) => {
+  try {
+    console.log('Approval request for patient ID:', req.params.id);
+    console.log('Request body:', req.body);
+    
+    const { isApproved, approvedAt } = req.body;
+    
+    // Create update object with approval data
+    const updateData = {
+      isApproved: !!isApproved,
+      approvedAt: approvedAt || (isApproved ? new Date() : null)
+    };
+    
+    if (isApproved) {
+      updateData.approvedBy = req.hospital._id;
+    } else {
+      updateData.approvedBy = null;
+    }
+    
+    // Find and update the patient
+    const patient = await Patient.findOneAndUpdate(
+      {
+        patientId: req.params.id,
+        hospitalId: req.hospital._id
+      },
+      updateData,
+      { new: true }
+    );
+    
+    // Check if patient exists
+    if (!patient) {
+      console.log('Patient not found for ID:', req.params.id);
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Patient not found' 
+      });
+    }
+    
+    console.log('Successfully updated patient:', patient);
+    res.status(200).json(patient);
+  } catch (error) {
+    console.error('Update approval status error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error while updating approval status',
+      error: error.message
+    });
+  }
+});
+
 
 module.exports = router;
