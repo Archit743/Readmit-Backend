@@ -73,6 +73,11 @@ function calculateStats(patients) {
     patient => !patient.readmissionRisk || patient.readmissionRisk === "Unknown"
   ).length;
   
+  // NEW: Count unapproved assessments
+  const unapprovedAssessments = patients.filter(
+    patient => patient.isApproved === false
+  ).length;
+
   // Calculate average readmission risk for patients who have been assessed
   const assessedPatients = patients.filter(
     patient => patient.readmissionRisk && patient.readmissionRisk !== "Unknown"
@@ -107,6 +112,7 @@ function calculateStats(patients) {
   return {
     totalPatients,
     pendingAssessments,
+    unapprovedAssessments,
     avgReadmissionRisk,
     highRiskPatients
   };

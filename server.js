@@ -6,6 +6,7 @@ const authRoutes = require('./routes/auth');
 const patientRoutes = require('./routes/patients');
 const predictionRoutes = require('./routes/predictions');
 const stats = require('./routes/stats');
+const recommendationsRoutes = require('./routes/recommendations');
 
 // Load environment variables
 dotenv.config();
@@ -27,6 +28,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/patients', patientRoutes);
 app.use('/api/predictions', predictionRoutes);
 app.use('/api/stats', stats);
+app.use('/api/recommendations', recommendationsRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
