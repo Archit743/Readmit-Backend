@@ -26,33 +26,33 @@ router.post('/', protect, async (req, res) => {
     // Get Gemini Pro model
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    // Build a more personalized and actionable prompt
-    let prompt = `Create personalized care recommendations for a patient with ${riskCategory} risk (${riskValue || 'unspecified'} value).`;
+    // Build a more technical prompt for doctors with concise output
+    let prompt = `Generate exactly 5-6 concise, evidence-based clinical recommendations for a patient with ${riskCategory} readmission risk (${riskValue || 'unspecified'} value).`;
     
     // Add patient-specific context
     if (patientData) {
-      prompt += ` Based on these patient details:`;
+      prompt += ` Clinical data: `;
       
-      if (patientData.age) prompt += ` Age: ${patientData.age}.`;
-      if (patientData.gender) prompt += ` Gender: ${patientData.gender}.`;
-      if (patientData.diagnosis) prompt += ` Primary condition: ${patientData.diagnosis}.`;
-      if (patientData.comorbidities) prompt += ` Other health conditions: ${patientData.comorbidities.join(', ')}.`;
-      if (patientData.medications) prompt += ` Current medications: ${patientData.medications.join(', ')}.`;
-      
-      prompt += ` Analyze these factors to provide 3-4 personalized recommendations.`;
+      if (patientData.age) prompt += `Age: ${patientData.age}. `;
+      if (patientData.gender) prompt += `Gender: ${patientData.gender}. `;
+      if (patientData.diagnosis) prompt += `Dx: ${patientData.diagnosis}. `;
+      if (patientData.comorbidities) prompt += `Comorbidities: ${patientData.comorbidities.join(', ')}. `;
+      if (patientData.medications) prompt += `Meds: ${patientData.medications.join(', ')}. `;
     }
     
     prompt += ` For each recommendation:
-    1. Use simple, everyday language - avoid medical jargon
-    2. Be specific and actionable
-    3. Keep each recommendation brief (1-2 sentences)
-    4. Consider the patient's specific health profile
+    1. Use precise clinical terminology appropriate for physicians
+    2. Keep each recommendation to 1-2 concise sentences maximum
+    3. Be direct and actionable with specific timeframes
+    4. Avoid lengthy rationales or explanations
+    5. Focus on highest-impact interventions based on risk level
+    6. Limit to exactly 5-6 total recommendations
     
-    Format the response as a JSON object with a 'recommendations' array. Each recommendation should have a 'text' field with the easy-to-understand recommendation and a 'category' field (like "Follow-up Care", "Medication", "Lifestyle", "Monitoring").`;
+    Format the response as a JSON object with a 'recommendations' array. Each recommendation should have a 'text' field with the concise clinical recommendation and a 'category' field (e.g., "Follow-up", "Medication", "Monitoring", "Referral", "Testing").`;
 
     // Configure generation parameters
     const generationConfig = {
-      temperature: 0.2, // Lower temperature for more focused outputs
+      temperature: 0.2, // Lower for more consistent, precise outputs
       maxOutputTokens: 800,
       topP: 0.7,
       topK: 40
@@ -78,9 +78,14 @@ router.post('/', protect, async (req, res) => {
       const aiResponse = JSON.parse(jsonStr);
       recommendations = aiResponse.recommendations || [];
       
-      // Validate the response format
+      // Validate the response format and limit to 6 recommendations
       if (!Array.isArray(recommendations)) {
         throw new Error('Invalid AI response format');
+      }
+      
+      // Enforce the 5-6 recommendation limit
+      if (recommendations.length > 6) {
+        recommendations = recommendations.slice(0, 6);
       }
     } catch (parseError) {
       console.error('Error parsing AI response:', parseError);
@@ -126,58 +131,74 @@ router.post('/', protect, async (req, res) => {
  * @returns {Array} Array of recommendation objects
  */
 function getFallbackRecommendations(riskCategory) {
-  // Updated fallback recommendations with simpler language
+  // Shortened, technical fallback recommendations for physicians
   if (riskCategory === 'high') {
     return [
       {
-        text: "See your doctor within 2 weeks. Bring a list of any questions or concerns you have.",
-        category: "Follow-up Care"
+        text: "Schedule follow-up within 14 days post-discharge with medication reconciliation.",
+        category: "Follow-up"
       },
       {
-        text: "Work with a care coordinator to help manage your care after leaving the hospital.",
-        category: "Support"
+        text: "Implement TCM services with 48-hour post-discharge contact.",
+        category: "Care Coordination"
       },
       {
-        text: "Review your medication schedule with your caregiver or family member.",
+        text: "Daily vital sign monitoring (BP, HR, weight) for 7 days with alert parameters.",
+        category: "Monitoring"
+      },
+      {
+        text: "Pharmacist consult for comprehensive medication review.",
         category: "Medication"
       },
       {
-        text: "Check your blood pressure, heart rate, and weight daily for the next week.",
-        category: "Monitoring"
+        text: "Assess candidacy for home health services with ADL evaluation.",
+        category: "Home Care"
       }
     ];
   } else if (riskCategory === 'medium') {
     return [
       {
-        text: "Schedule a follow-up appointment within the next month.",
-        category: "Follow-up Care"
+        text: "Follow-up within 30 days with focused reassessment of primary condition.",
+        category: "Follow-up"
       },
       {
-        text: "Take all medications as prescribed and keep track of any side effects.",
+        text: "Medication adherence assessment at 14 days post-discharge.",
         category: "Medication"
       },
       {
-        text: "Know the warning signs that require medical attention and when to call your doctor.",
-        category: "Home Care"
+        text: "Telehealth evaluation at 14 days to assess treatment response.",
+        category: "Monitoring"
       },
       {
-        text: "Consider a video check-in with your healthcare provider in two weeks.",
-        category: "Follow-up Care"
+        text: "Disease-specific education on exacerbation warning signs requiring urgent evaluation.",
+        category: "Education"
+      },
+      {
+        text: "Lab monitoring within 30 days for relevant parameters based on diagnosis and therapy.",
+        category: "Testing"
       }
     ];
   } else {
     return [
       {
-        text: "Schedule your next regular check-up as recommended by your doctor.",
-        category: "Follow-up Care"
+        text: "Routine follow-up per standard clinical protocols.",
+        category: "Follow-up"
       },
       {
-        text: "Continue your normal healthy habits including regular exercise and a balanced diet.",
-        category: "Lifestyle"
-      },
-      {
-        text: "Take all medications as prescribed and report any concerns to your doctor.",
+        text: "Standard medication reconciliation at next visit.",
         category: "Medication"
+      },
+      {
+        text: "Disease-specific preventive care measures per guidelines.",
+        category: "Prevention"
+      },
+      {
+        text: "Routine surveillance for condition progression per guidelines.",
+        category: "Monitoring"
+      },
+      {
+        text: "Quality metrics assessment at next scheduled encounter.",
+        category: "Quality"
       }
     ];
   }

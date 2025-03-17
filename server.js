@@ -4,7 +4,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const authRoutes = require('./routes/auth');
 const patientRoutes = require('./routes/patients');
-const predictionRoutes = require('./routes/predictions');
+// const predictionRoutes = require('./routes/predictions');
 const stats = require('./routes/stats');
 const recommendationsRoutes = require('./routes/recommendations');
 
@@ -15,7 +15,12 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173','http://localhost:4000'], // Your frontend URL
+  credentials: true, // Allow cookies if needed
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // Connect to MongoDB
@@ -26,7 +31,7 @@ mongoose.connect(process.env.MONGODB_URI)
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/patients', patientRoutes);
-app.use('/api/predictions', predictionRoutes);
+// app.use('/api/predict', predictionRoutes);
 app.use('/api/stats', stats);
 app.use('/api/recommendations', recommendationsRoutes);
 

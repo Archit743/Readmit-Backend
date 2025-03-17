@@ -3,6 +3,58 @@ const Patient = require('../models/Patient');
 const { protect } = require('../middleware/auth');
 const mongoose = require('mongoose');
 const router = express.Router();
+const axios = require('axios');
+const pdf = require('pdf-parse');
+
+const FLASK_API_URL = 'http://localhost:4000';
+
+
+// ============= PREDICTION ROUTES =============
+
+// @route   GET /api/patients/predict/health
+// @desc    Health check for prediction service
+// @access  Private
+router.get('/predict/health', async (req, res) => {
+  try {
+    const response = await axios.get(`${FLASK_API_URL}/health`);
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to connect to prediction service', 
+      details: error.message 
+    });
+  }
+});
+
+// @route   POST /api/patients/predict
+// @desc    Get prediction for a single patient
+// @access  Private
+router.post('/predict', async (req, res) => {
+  try {
+    const { fileUrls } = req.body;
+    
+    if (!fileUrls || !fileUrls.length) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'No file URLs provided' 
+      });
+    }
+    
+    // Pass the URL directly to Flask API without processing it
+    const response = await axios.post(`${FLASK_API_URL}/predict`, { pdfUrl: fileUrls[0] });
+    
+    // Return the prediction result
+    res.json(response.data);
+  } catch (error) {
+    console.error('Prediction error:', error.message);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to get prediction', 
+      details: error.response ? error.response.data : error.message 
+    });
+  }
+});
 
 // Apply protection middleware to all routes
 router.use(protect);
@@ -307,6 +359,8 @@ router.patch('/:id/approval', async (req, res) => {
     });
   }
 });
+
+
 
 
 module.exports = router;
