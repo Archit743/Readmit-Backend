@@ -4,7 +4,6 @@ const { protect } = require('../middleware/auth');
 const mongoose = require('mongoose');
 const router = express.Router();
 const axios = require('axios');
-const pdf = require('pdf-parse');
 
 const FLASK_API_URL = 'http://localhost:4000';
 
@@ -111,7 +110,7 @@ router.post('/', async (req, res) => {
       lengthOfStay: parseInt(lengthOfStay),
       previousAdmissions: parseInt(previousAdmissions),
       fileUrls: Array.isArray(fileUrls) ? fileUrls : [],
-      readmissionRisk: readmissionRisk || "Unknown",
+      readmissionRisk: readmissionRisk ? parseFloat(readmissionRisk) : null,
       date: date || new Date().toISOString(),
       hospitalId: req.hospital._id,
       isApproved: req.body.isApproved || false,
@@ -221,8 +220,7 @@ router.put('/:id', async (req, res) => {
     if (lengthOfStay) updateData.lengthOfStay = parseInt(lengthOfStay);
     if (previousAdmissions) updateData.previousAdmissions = parseInt(previousAdmissions);
     if (fileUrls) updateData.fileUrls = Array.isArray(fileUrls) ? fileUrls : [];
-    if (readmissionRisk) updateData.readmissionRisk = readmissionRisk;
-        // Inside your existing PUT route, in the updateData section
+    if (readmissionRisk !== undefined) updateData.readmissionRisk = parseFloat(readmissionRisk);
     if (req.body.hasOwnProperty('isApproved')) {
       updateData.isApproved = !!req.body.isApproved;
       updateData.approvedAt = req.body.isApproved ? new Date() : null;

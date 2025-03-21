@@ -48,9 +48,8 @@ const PatientSchema = new mongoose.Schema({
     default: 0
   },
   readmissionRisk: {
-    type: String,
-    enum: ['Low', 'Medium', 'High', 'Unknown'],
-    default: 'Unknown'
+    type: Number,  // Change from String to Number
+    default: null  // Remove enum restriction
   },
   fileUrls: {
     type: [String],
