@@ -98,15 +98,15 @@ function calculateStats(patients) {
     avgReadmissionRisk = totalRisk / assessedPatients.length;
   }
   
-  // Count high risk patients (risk > 70%)
+  // Count high risk patients (risk > 30%)
   const highRiskPatients = patients.filter(patient => {
-    if (!patient.readmissionRisk || patient.readmissionRisk === "Unknown") return false;
+    if (!patient.readmissionRisk) return false;
     
     const riskValue = typeof patient.readmissionRisk === 'string' 
       ? parseFloat(patient.readmissionRisk.replace('%', '')) 
       : parseFloat(patient.readmissionRisk);
       
-    return !isNaN(riskValue) && riskValue > 70;
+    return !isNaN(riskValue) && riskValue > 30;
   }).length;
   
   return {
