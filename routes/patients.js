@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const router = express.Router();
 const axios = require('axios');
 
-const FLASK_API_URL = 'http://localhost:4000';
+const FLASK_API_URL = 'https://flask-readmit-microservice.onrender.com';
 
 
 // ============= PREDICTION ROUTES =============
