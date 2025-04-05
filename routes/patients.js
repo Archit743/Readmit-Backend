@@ -7,6 +7,9 @@ const axios = require('axios');
 
 const FLASK_API_URL = 'https://flask-readmit-microservice.onrender.com';
 
+const axiosInstance = axios.create({
+  timeout: 10000, // 10 seconds
+});
 
 // ============= PREDICTION ROUTES =============
 
@@ -15,7 +18,7 @@ const FLASK_API_URL = 'https://flask-readmit-microservice.onrender.com';
 // @access  Private
 router.get('/predict/health', async (req, res) => {
   try {
-    const response = await axios.get(`${FLASK_API_URL}/health`);
+    const response = await axiosInstance.get(`${FLASK_API_URL}/health`);
     res.json(response.data);
   } catch (error) {
     res.status(500).json({ 
@@ -41,7 +44,7 @@ router.post('/predict', async (req, res) => {
     }
     
     // Pass the URL directly to Flask API without processing it
-    const response = await axios.post(`${FLASK_API_URL}/predict`, { pdfUrl: fileUrls[0] });
+    const response = await axiosInstance.post(`${FLASK_API_URL}/predict`, { pdfUrl: fileUrls[0] });
     
     // Return the prediction result
     res.json(response.data);
